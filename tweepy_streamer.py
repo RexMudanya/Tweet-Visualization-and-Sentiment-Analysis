@@ -6,6 +6,7 @@ from tweepy import API
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import twitter_credentials
 
 
@@ -92,6 +93,16 @@ class TweetAnalyzer():
     '''
     Analyzing and categorizing content from tweets
     '''
+    def tweets_to_data_frame(self, tweets):
+        df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['Tweets'])
+        df['len'] = np.array([len(tweet.text) for tweet in tweets])
+        df['id'] = np.array([tweet.id for tweet in tweets])
+        df['date'] = np.array([tweet.created_at for tweet in tweets])
+        df['source'] = np.array([tweet.source for tweet in tweets])
+        df['likes'] = np.array([tweet.favorite_count for tweet in tweets])
+        df['retweets'] = np.array([tweet.retweet_count for tweet in tweets])
+
+        return df
 
 if __name__ == "__main__":
     
@@ -105,7 +116,35 @@ if __name__ == "__main__":
     # twitter_streamer.stream_tweets(fetched_tweets_filename, hash_tag_list)
 
     twitter_client = TwitterClient()
+    tweet_analyzer = TweetAnalyzer()
     api = twitter_client.get_twitter_client_api()
 
-    tweets = api.user_timeline(screen_name="realDonaldTrump", count=1)
-    print(tweets)
+    tweets = api.user_timeline(screen_name="realDonaldTrump", count=20)
+    #print(tweets)
+    # print(dir(tweets[0])) # what we can extract
+    df = tweet_analyzer.tweets_to_data_frame(tweets)
+    # print(df.head(10))
+    # get average length of all tweets in df
+    print(np.mean(df['len']))
+    # get most liked tweet
+    print(np.max(df['likes']))
+    # get most retweets
+    print(np.max(df['retweets']))
+
+    # Time Series for likes
+    # time_likes = pd.Series(data = df['likes'].values, index=df['date'])
+    # time_likes.plot(figsize=(16, 4), color='r')
+    # plt.show()
+
+    # time series for retweets
+    # time_retweets = pd.Series(data = df['retweets'].values, index=df['date'])
+    # time_retweets.plot(figsize=(16, 4), color='r')
+    # plt.show()        
+
+    # combined likes and retweets time series
+    time_likes = pd.Series(data = df['likes'].values, index=df['date'])
+    time_likes.plot(figsize=(16, 4), label='likes', legend=True)
+
+    time_retweets = pd.Series(data = df['retweets'].values, index=df['date'])
+    time_retweets.plot(figsize=(16, 4), label='retweets', legend=True)
+    plt.show()
