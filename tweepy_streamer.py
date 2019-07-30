@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import twitter_credentials
+from textblob import TextBlob
+import re
 
 
 class TwitterClient():
@@ -93,6 +95,19 @@ class TweetAnalyzer():
     '''
     Analyzing and categorizing content from tweets
     '''
+    def clean_tweet(self, tweet):
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+    
+    def analyze_sentiment(self, tweet):
+        analysis = TextBlob(self.clean_tweet(tweet))
+
+        if analysis.sentiment.polarity > 0:
+            return 1
+        elif analysis.sentiment.polarity == 0:
+            return 0
+        else:
+            return -1
+    
     def tweets_to_data_frame(self, tweets):
         df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['Tweets'])
         df['len'] = np.array([len(tweet.text) for tweet in tweets])
@@ -119,17 +134,19 @@ if __name__ == "__main__":
     tweet_analyzer = TweetAnalyzer()
     api = twitter_client.get_twitter_client_api()
 
-    tweets = api.user_timeline(screen_name="realDonaldTrump", count=20)
+    tweets = api.user_timeline(screen_name="MmustDsc", count=200)
     #print(tweets)
     # print(dir(tweets[0])) # what we can extract
     df = tweet_analyzer.tweets_to_data_frame(tweets)
-    # print(df.head(10))
+    df['sentiment'] = np.array([tweet_analyzer.analyze_sentiment(tweet) for tweet in df['Tweets']])
+
+    print(df.head(10))
     # get average length of all tweets in df
-    print(np.mean(df['len']))
+    # print(np.mean(df['len']))
     # get most liked tweet
-    print(np.max(df['likes']))
+    # print(np.max(df['likes']))
     # get most retweets
-    print(np.max(df['retweets']))
+    # print(np.max(df['retweets']))
 
     # Time Series for likes
     # time_likes = pd.Series(data = df['likes'].values, index=df['date'])
@@ -142,9 +159,9 @@ if __name__ == "__main__":
     # plt.show()        
 
     # combined likes and retweets time series
-    time_likes = pd.Series(data = df['likes'].values, index=df['date'])
-    time_likes.plot(figsize=(16, 4), label='likes', legend=True)
+    # time_likes = pd.Series(data = df['likes'].values, index=df['date'])
+    # time_likes.plot(figsize=(16, 4), label='likes', legend=True)
 
-    time_retweets = pd.Series(data = df['retweets'].values, index=df['date'])
-    time_retweets.plot(figsize=(16, 4), label='retweets', legend=True)
-    plt.show()
+    # time_retweets = pd.Series(data = df['retweets'].values, index=df['date'])
+    # time_retweets.plot(figsize=(16, 4), label='retweets', legend=True)
+    # plt.show()
